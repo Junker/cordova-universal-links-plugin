@@ -8,11 +8,12 @@ data you have specified in the projects config.xml file.
 var configParser = require('./lib/configXmlParser.js');
 var androidManifestWriter = require('./lib/android/manifestWriter.js');
 var androidWebHook = require('./lib/android/webSiteHook.js');
-var iosProjectEntitlements = require('./lib/ios/projectEntitlements.js');
-var iosAppSiteAssociationFile = require('./lib/ios/appleAppSiteAssociationFile.js');
-var iosProjectPreferences = require('./lib/ios/xcodePreferences.js');
+var ConfigXmlHelper = require('./lib/configXmlHelper.js');
 var ANDROID = 'android';
 var IOS = 'ios';
+const IOS_PLIST_PATH = 'platforms/ios/*/Entitlements-$Release.plist';
+const ASSOCIATED_DOMAINS = 'com.apple.developer.associated-domains';
+const releases = ['Debug', 'Release'];
 
 module.exports = function(ctx) {
   run(ctx);
@@ -69,18 +70,45 @@ function activateUniversalLinksInAndroid(cordovaContext, pluginPreferences) {
 }
 
 /**
+ * Name of the project from config.xml
+ *
+ * @return {String} project name
+ */
+function getProjectName(context) {
+  var configXmlHelper = new ConfigXmlHelper(context);
+  return configXmlHelper.getProjectName();
+}
+
+/**
  * Activate Universal Links for iOS application.
  *
  * @param {Object} cordovaContext - cordova context object
  * @param {Object} pluginPreferences - plugin preferences from the config.xml file. Basically, content from <universal-links> tag.
  */
-function activateUniversalLinksInIos(cordovaContext, pluginPreferences) {
-  // modify xcode project preferences
-  iosProjectPreferences.enableAssociativeDomainsCapability(cordovaContext);
+function activateUniversalLinksInIos(context, pluginPreferences) {
+  const pathToUse = IOS_PLIST_PATH.replace(/\*/g, getProjectName());
 
-  // generate entitlements file
-  iosProjectEntitlements.generateAssociatedDomainsEntitlements(cordovaContext, pluginPreferences);
+  releases.forEach((release) => {
+    const iosInfoPath = path.join(context.opts.projectRoot, pathToUse.replace('$Release', release));
 
-  // generate apple-site-association-file
-  iosAppSiteAssociationFile.generate(cordovaContext, pluginPreferences);
+    let iosInfo = fs.readFileSync(iosInfoPath, 'utf8');
+  
+    iosInfo = plist.parse(iosInfo)
+  
+    if (!iosInfo[ASSOCIATED_DOMAINS]) {
+      iosInfo[ASSOCIATED_DOMAINS] = [];
+    }
+  
+    pluginPreferences.hosts.forEach((host) => {
+      const url = `applinks:${host.name}`;
+  
+      if (!iosInfo[ASSOCIATED_DOMAINS].find((hostUrl) => hostUrl === url)) {
+        iosInfo['com.apple.developer.associated-domains'].push(url);
+      }
+    });
+  
+    const xml = plist.build(iosInfo);
+  
+    fs.writeFileSync(iosInfoPath, xml);
+  });
 }

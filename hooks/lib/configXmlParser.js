@@ -40,9 +40,12 @@ function readPreferences(cordovaContext) {
   // read ios team ID
   var iosTeamId = getTeamIdPreference(xmlPreferences);
 
+  const mainAndroidActivity = getMainAndroidActivityName(xmlPreferences);
+
   return {
     'hosts': hosts,
-    'iosTeamId': iosTeamId
+    'iosTeamId': iosTeamId,
+    mainAndroidActivity,
   };
 }
 
@@ -53,6 +56,14 @@ function readPreferences(cordovaContext) {
 function getTeamIdPreference(xmlPreferences) {
   if (xmlPreferences.hasOwnProperty('ios-team-id')) {
     return xmlPreferences['ios-team-id'][0]['$']['value'];
+  }
+
+  return null;
+}
+
+function getMainAndroidActivityName(xmlPreferences) {
+  if (xmlPreferences.hasOwnProperty('android-activity-name')) {
+    return xmlPreferences['android-activity-name'][0]['$']['value'];
   }
 
   return null;

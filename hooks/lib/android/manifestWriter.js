@@ -178,17 +178,32 @@ function isDataTagForUniversalLinks(data) {
 function injectOptions(manifestData, pluginPreferences) {
   var changedManifest = manifestData;
   var activitiesList = changedManifest['manifest']['application'][0]['activity'];
-  var launchActivityIndex = getMainLaunchActivityIndex(activitiesList);
   var ulIntentFilters = [];
   var launchActivity;
+  if (!pluginPreferences.mainAndroidActivity) {
+    var launchActivityIndex = getMainLaunchActivityIndex(activitiesList);
+    if (launchActivityIndex < 0) {
+      // launchActivityIndex = getMainLaunchActivityIndex(changedManifest['manifest']['application'][0]['activity-alias']);
+      launchActivityIndex = 0;
+    }
 
-  if (launchActivityIndex < 0) {
-    console.warn('Could not find launch activity in the AndroidManifest file. Can\'t inject Universal Links preferences.');
-    return;
+    if (launchActivityIndex < 0) {
+      console.warn('Could not find launch activity in the AndroidManifest file. Can\'t inject Universal Links preferences.');
+      return;
+    }
+
+    // get launch activity
+    launchActivity = activitiesList[launchActivityIndex];
+  } else {
+    launchActivity = activitiesList.find((activity) => {
+      return activity['$']['android:name'] === pluginPreferences.mainAndroidActivity;
+    });
+    
+    if (!launchActivity) {
+      console.warn(`Could not find launc activity ${pluginPreferences.mainAndroidActivity} in AndroidManifest!`);
+      return;
+    }
   }
-
-  // get launch activity
-  launchActivity = activitiesList[launchActivityIndex];
 
   // generate intent-filters
   pluginPreferences.hosts.forEach(function(host) {

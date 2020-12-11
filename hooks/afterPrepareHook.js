@@ -4,7 +4,9 @@ Hook is executed at the end of the 'prepare' stage. Usually, when you call 'cord
 It will inject required preferences in the platform-specific projects, based on <universal-links>
 data you have specified in the projects config.xml file.
 */
-
+const path = require('path');
+const fs = require('fs');
+const plist = require('plist');
 var configParser = require('./lib/configXmlParser.js');
 var androidManifestWriter = require('./lib/android/manifestWriter.js');
 var androidWebHook = require('./lib/android/webSiteHook.js');
@@ -86,7 +88,7 @@ function getProjectName(context) {
  * @param {Object} pluginPreferences - plugin preferences from the config.xml file. Basically, content from <universal-links> tag.
  */
 function activateUniversalLinksInIos(context, pluginPreferences) {
-  const pathToUse = IOS_PLIST_PATH.replace(/\*/g, getProjectName());
+  const pathToUse = IOS_PLIST_PATH.replace(/\*/g, getProjectName(context));
 
   releases.forEach((release) => {
     const iosInfoPath = path.join(context.opts.projectRoot, pathToUse.replace('$Release', release));

@@ -182,10 +182,6 @@ function injectOptions(manifestData, pluginPreferences) {
   var launchActivity;
   if (!pluginPreferences.mainAndroidActivity) {
     var launchActivityIndex = getMainLaunchActivityIndex(activitiesList);
-    if (launchActivityIndex < 0) {
-      // launchActivityIndex = getMainLaunchActivityIndex(changedManifest['manifest']['application'][0]['activity-alias']);
-      launchActivityIndex = 0;
-    }
 
     if (launchActivityIndex < 0) {
       console.warn('Could not find launch activity in the AndroidManifest file. Can\'t inject Universal Links preferences.');
